@@ -1,41 +1,60 @@
 --[[
     ╔══════════════════════════════════════════════════════════════╗
-    ║                 PulseUI Library v3.0 (Premium)               ║
+    ║              PulseUI Library v3.1 (Premium Dark)             ║
+    ╠══════════════════════════════════════════════════════════════╣
+    ║  • Тёмно-фиолетовая тема (почти чёрная)                     ║
+    ║  • Уведомления со стэкингом (не накладываются)               ║
+    ║  • RightShift — скрыть/показать GUI (с анимацией)            ║
+    ║  • SetTitle / SetSubTitle / SetFooter — динамическая смена   ║
+    ║  • Анимация появления (Zoom + Fade)                          ║
+    ║  • Плавающий индикатор табов с Glow                          ║
+    ║  • Hover-свечение на всех элементах                          ║
+    ║  • Слайдеры с градиентом + Knob                              ║
+    ║  • Dropdown с анимированной стрелкой                         ║
+    ║  • Keybind элемент                                           ║
     ╚══════════════════════════════════════════════════════════════╝
-    
-    Особенности:
-    • Анимация появления (Zoom + Fade)
-    • Гладкие переходы табов с плавающим индикатором
-    • Эффекты свечения (Glow) при наведении
-    • Слайдеры с градиентом
-    • Выпадающие списки с анимацией стрелки
-    • Уведомления с таймером
+
+    Использование:
+    local PulseUI = loadstring(game:HttpGet("URL"))()
+
+    local Window = PulseUI:CreateWindow({
+        Title = "My Hub",
+        SubTitle = "v1.0",
+        Size = UDim2.fromOffset(650, 450),
+        MinimizeKey = Enum.KeyCode.RightShift
+    })
+
+    Window:SetTitle("New Title")
+    Window:SetSubTitle("v2.0")
+    Window:SetFooter("Custom footer")
+
+    local Tab = Window:AddTab("Combat")
+    Tab:AddToggle({Name = "Aimbot", Callback = function(v) end})
 ]]
 
-local TweenService = game:GetService("TweenService")
+local TweenService     = game:GetService("TweenService")
 local UserInputService = game:GetService("UserInputService")
-local RunService = game:GetService("RunService")
-local Players = game:GetService("Players")
-local CoreGui = game:GetService("CoreGui")
+local Players          = game:GetService("Players")
+local CoreGui          = game:GetService("CoreGui")
 
 local PulseUI = {}
 
 -- ═══════════════════════════════════════
---  THEME & CONFIG
+--  DARK PURPLE THEME
 -- ═══════════════════════════════════════
 local T = {
-    Bg          = Color3.fromRGB(13, 13, 18),
-    TopBar      = Color3.fromRGB(17, 17, 23),
-    Side        = Color3.fromRGB(17, 17, 23),
-    Elem        = Color3.fromRGB(24, 24, 30),
-    Hover       = Color3.fromRGB(32, 32, 40),
-    Accent      = Color3.fromRGB(138, 55, 220), -- Основной фиолетовый
-    AccentLight = Color3.fromRGB(175, 105, 245),
-    Text        = Color3.fromRGB(230, 230, 235),
-    Dim         = Color3.fromRGB(100, 100, 115),
-    Off         = Color3.fromRGB(40, 40, 50),
-    Line        = Color3.fromRGB(35, 35, 44),
-    Scroll      = Color3.fromRGB(55, 55, 68),
+    Bg          = Color3.fromRGB(10, 10, 14),
+    TopBar      = Color3.fromRGB(14, 14, 19),
+    Side        = Color3.fromRGB(14, 14, 19),
+    Elem        = Color3.fromRGB(20, 20, 26),
+    Hover       = Color3.fromRGB(28, 28, 36),
+    Accent      = Color3.fromRGB(72, 18, 120),
+    AccentLight = Color3.fromRGB(100, 45, 165),
+    Text        = Color3.fromRGB(215, 215, 220),
+    Dim         = Color3.fromRGB(85, 85, 100),
+    Off         = Color3.fromRGB(32, 32, 40),
+    Line        = Color3.fromRGB(28, 28, 36),
+    Scroll      = Color3.fromRGB(45, 45, 58),
 }
 
 -- ═══════════════════════════════════════
@@ -43,8 +62,8 @@ local T = {
 -- ═══════════════════════════════════════
 local function tw(obj, props, dur, style, dir)
     local info = TweenInfo.new(
-        dur or 0.2, 
-        style or Enum.EasingStyle.Quart, 
+        dur or 0.2,
+        style or Enum.EasingStyle.Quart,
         dir or Enum.EasingDirection.Out
     )
     local tween = TweenService:Create(obj, info, props)
@@ -61,10 +80,10 @@ end
 
 local function pad(obj, t, r, b, l)
     local p = Instance.new("UIPadding")
-    p.PaddingTop = UDim.new(0, t or 0)
-    p.PaddingRight = UDim.new(0, r or 0)
+    p.PaddingTop    = UDim.new(0, t or 0)
+    p.PaddingRight  = UDim.new(0, r or 0)
     p.PaddingBottom = UDim.new(0, b or 0)
-    p.PaddingLeft = UDim.new(0, l or 0)
+    p.PaddingLeft   = UDim.new(0, l or 0)
     p.Parent = obj
     return p
 end
@@ -78,14 +97,13 @@ local function stroke(obj, color, thick, transp)
     return s
 end
 
--- Проверка поддержки CanvasGroup (для красивого фейда)
 local canvasSupport = pcall(function()
     local t = Instance.new("CanvasGroup")
     t:Destroy()
 end)
 
 -- ═══════════════════════════════════════
---  MAIN LIBRARY
+--  CREATE WINDOW
 -- ═══════════════════════════════════════
 function PulseUI:CreateWindow(cfg)
     cfg = cfg or {}
@@ -93,36 +111,40 @@ function PulseUI:CreateWindow(cfg)
     local tabs = {}
     local firstTab = true
     local isVisible = true
-    
-    local BTN_HEIGHT = 34
-    local BTN_PAD = 4
-    local TAB_START_Y = 44
-    local SIDE_WIDTH = 155
 
-    -- 1. SETUP GUI
+    local BTN_HEIGHT  = 34
+    local BTN_PAD     = 4
+    local TAB_START_Y = 44
+    local SIDE_WIDTH  = 155
+
+    -- Notification stacking system
+    local activeNotifs = {}
+    local NOTIF_H   = 66
+    local NOTIF_GAP  = 8
+
+    -- ── ScreenGui ──
     local sg = Instance.new("ScreenGui")
     sg.Name = "PulseUI_Library"
     sg.ZIndexBehavior = Enum.ZIndexBehavior.Sibling
     sg.ResetOnSpawn = false
-    
-    -- Безопасное добавление в GUI
+
     if gethui then
         sg.Parent = gethui()
-    elseif CoreGui:FindFirstChild("RobloxGui") then
+    elseif pcall(function() return CoreGui.Name end) then
         sg.Parent = CoreGui
     else
         sg.Parent = Players.LocalPlayer:WaitForChild("PlayerGui")
     end
 
-    -- 2. MAIN FRAME
+    -- ── Main Frame ──
     local main
     if canvasSupport then
         main = Instance.new("CanvasGroup")
-        main.GroupTransparency = 1 -- Старт невидимым
+        main.GroupTransparency = 1
     else
         main = Instance.new("Frame")
     end
-    
+
     main.Name = "Main"
     main.BackgroundColor3 = T.Bg
     main.BorderSizePixel = 0
@@ -132,11 +154,10 @@ function PulseUI:CreateWindow(cfg)
     main.ClipsDescendants = true
     main.Parent = sg
     rc(main, 10)
-    
-    -- Свечение вокруг окна
-    stroke(main, T.Accent, 1.6, 0.6)
 
-    -- Анимация появления
+    stroke(main, T.Accent, 1.5, 0.5)
+
+    -- Intro animation
     local uiScale = Instance.new("UIScale")
     uiScale.Scale = 0.92
     uiScale.Parent = main
@@ -148,7 +169,7 @@ function PulseUI:CreateWindow(cfg)
         end
     end)
 
-    -- 3. TOP BAR
+    -- ── Top Bar ──
     local top = Instance.new("Frame")
     top.Name = "TopBar"
     top.BackgroundColor3 = T.TopBar
@@ -156,28 +177,28 @@ function PulseUI:CreateWindow(cfg)
     top.Size = UDim2.new(1, 0, 0, 38)
     top.Parent = main
 
-    local title = Instance.new("TextLabel")
-    title.BackgroundTransparency = 1
-    title.Position = UDim2.fromOffset(16, 0)
-    title.Size = UDim2.new(0, 200, 1, 0)
-    title.Font = Enum.Font.GothamBold
-    title.Text = cfg.Title or "PulseUI"
-    title.TextColor3 = T.Accent
-    title.TextSize = 16
-    title.TextXAlignment = Enum.TextXAlignment.Left
-    title.Parent = top
+    local titleLbl = Instance.new("TextLabel")
+    titleLbl.BackgroundTransparency = 1
+    titleLbl.Position = UDim2.fromOffset(16, 0)
+    titleLbl.Size = UDim2.new(0, 250, 1, 0)
+    titleLbl.Font = Enum.Font.GothamBold
+    titleLbl.Text = cfg.Title or "PulseUI"
+    titleLbl.TextColor3 = T.AccentLight
+    titleLbl.TextSize = 16
+    titleLbl.TextXAlignment = Enum.TextXAlignment.Left
+    titleLbl.Parent = top
 
-    local subTitle = Instance.new("TextLabel")
-    subTitle.BackgroundTransparency = 1
-    subTitle.AnchorPoint = Vector2.new(1, 0)
-    subTitle.Position = UDim2.new(1, -16, 0, 0)
-    subTitle.Size = UDim2.new(0, 200, 1, 0)
-    subTitle.Font = Enum.Font.Gotham
-    subTitle.Text = cfg.SubTitle or "Premium"
-    subTitle.TextColor3 = T.Dim
-    subTitle.TextSize = 12
-    subTitle.TextXAlignment = Enum.TextXAlignment.Right
-    subTitle.Parent = top
+    local subTitleLbl = Instance.new("TextLabel")
+    subTitleLbl.BackgroundTransparency = 1
+    subTitleLbl.AnchorPoint = Vector2.new(1, 0)
+    subTitleLbl.Position = UDim2.new(1, -16, 0, 0)
+    subTitleLbl.Size = UDim2.new(0, 200, 1, 0)
+    subTitleLbl.Font = Enum.Font.Gotham
+    subTitleLbl.Text = cfg.SubTitle or "Premium"
+    subTitleLbl.TextColor3 = T.Dim
+    subTitleLbl.TextSize = 12
+    subTitleLbl.TextXAlignment = Enum.TextXAlignment.Right
+    subTitleLbl.Parent = top
 
     local topDiv = Instance.new("Frame")
     topDiv.BackgroundColor3 = T.Line
@@ -186,7 +207,7 @@ function PulseUI:CreateWindow(cfg)
     topDiv.Size = UDim2.new(1, 0, 0, 1)
     topDiv.Parent = top
 
-    -- 4. SIDEBAR
+    -- ── Sidebar ──
     local side = Instance.new("Frame")
     side.Name = "Sidebar"
     side.BackgroundColor3 = T.Side
@@ -213,7 +234,6 @@ function PulseUI:CreateWindow(cfg)
     navTitle.TextXAlignment = Enum.TextXAlignment.Left
     navTitle.Parent = side
 
-    -- Контейнер для кнопок табов
     local tabBox = Instance.new("Frame")
     tabBox.BackgroundTransparency = 1
     tabBox.Position = UDim2.fromOffset(10, TAB_START_Y)
@@ -225,49 +245,47 @@ function PulseUI:CreateWindow(cfg)
     tabLayout.SortOrder = Enum.SortOrder.LayoutOrder
     tabLayout.Parent = tabBox
 
-    -- Плавающий индикатор
+    -- Sliding indicator
     local indicator = Instance.new("Frame")
     indicator.Name = "Indicator"
-    indicator.BackgroundColor3 = T.Accent
+    indicator.BackgroundColor3 = T.AccentLight
     indicator.BorderSizePixel = 0
     indicator.Size = UDim2.fromOffset(3, BTN_HEIGHT)
     indicator.Position = UDim2.fromOffset(0, TAB_START_Y)
     indicator.ZIndex = 5
     indicator.Parent = side
     rc(indicator, 2)
-    
-    -- Свечение индикатора
+
     local indGlow = Instance.new("Frame")
     indGlow.BackgroundColor3 = T.Accent
-    indGlow.BackgroundTransparency = 0.6
-    indGlow.Position = UDim2.fromOffset(-2, 0)
-    indGlow.Size = UDim2.new(1, 4, 1, 0)
+    indGlow.BackgroundTransparency = 0.5
+    indGlow.Position = UDim2.fromOffset(-3, -1)
+    indGlow.Size = UDim2.new(1, 6, 1, 2)
     indGlow.ZIndex = 4
     indGlow.Parent = indicator
-    rc(indGlow, 4)
+    rc(indGlow, 5)
 
-    -- Нижний текст
-    local footer = Instance.new("TextLabel")
-    footer.BackgroundTransparency = 1
-    footer.Position = UDim2.new(0, 16, 1, -25)
-    footer.Size = UDim2.new(1, -32, 0, 20)
-    footer.Font = Enum.Font.Gotham
-    footer.Text = "PulseUI v3.0"
-    footer.TextColor3 = Color3.fromRGB(60, 60, 75)
-    footer.TextSize = 10
-    footer.TextXAlignment = Enum.TextXAlignment.Left
-    footer.Parent = side
+    local footerLbl = Instance.new("TextLabel")
+    footerLbl.BackgroundTransparency = 1
+    footerLbl.Position = UDim2.new(0, 16, 1, -25)
+    footerLbl.Size = UDim2.new(1, -32, 0, 20)
+    footerLbl.Font = Enum.Font.Gotham
+    footerLbl.Text = "PulseUI v3.1"
+    footerLbl.TextColor3 = Color3.fromRGB(45, 45, 58)
+    footerLbl.TextSize = 10
+    footerLbl.TextXAlignment = Enum.TextXAlignment.Left
+    footerLbl.Parent = side
 
-    -- 5. CONTENT AREA
+    -- ── Content Area ──
     local content = Instance.new("Frame")
     content.Name = "Content"
     content.BackgroundTransparency = 1
     content.Position = UDim2.fromOffset(SIDE_WIDTH + 1, 39)
     content.Size = UDim2.new(1, -(SIDE_WIDTH + 1), 1, -39)
-    content.Parent = main
     content.ClipsDescendants = true
+    content.Parent = main
 
-    -- 6. DRAGGING SYSTEM
+    -- ── Dragging ──
     local dragging, dragInput, dragStart, startPos
     top.InputBegan:Connect(function(input)
         if input.UserInputType == Enum.UserInputType.MouseButton1 or input.UserInputType == Enum.UserInputType.Touch then
@@ -287,25 +305,30 @@ function PulseUI:CreateWindow(cfg)
     UserInputService.InputChanged:Connect(function(input)
         if input == dragInput and dragging then
             local delta = input.Position - dragStart
-            main.Position = UDim2.new(startPos.X.Scale, startPos.X.Offset + delta.X, startPos.Y.Scale, startPos.Y.Offset + delta.Y)
+            main.Position = UDim2.new(
+                startPos.X.Scale, startPos.X.Offset + delta.X,
+                startPos.Y.Scale, startPos.Y.Offset + delta.Y
+            )
         end
     end)
 
-    -- 7. MINIMIZE LOGIC
+    -- ── Minimize (RightShift по умолчанию) ──
+    local minimizeKey = cfg.MinimizeKey or Enum.KeyCode.RightShift
+
     UserInputService.InputBegan:Connect(function(input, gpe)
         if gpe then return end
-        if input.KeyCode == (cfg.MinimizeKey or Enum.KeyCode.RightControl) then
+        if input.KeyCode == minimizeKey then
             isVisible = not isVisible
             if canvasSupport then
                 if isVisible then
                     main.Visible = true
-                    tw(main, {GroupTransparency = 0}, 0.25)
-                    tw(uiScale, {Scale = 1}, 0.3, Enum.EasingStyle.Back)
+                    tw(main, {GroupTransparency = 0}, 0.3)
+                    tw(uiScale, {Scale = 1}, 0.35, Enum.EasingStyle.Back)
                 else
                     tw(main, {GroupTransparency = 1}, 0.2)
-                    tw(uiScale, {Scale = 0.95}, 0.2)
-                    task.delay(0.25, function() 
-                        if not isVisible then main.Visible = false end 
+                    tw(uiScale, {Scale = 0.92}, 0.2)
+                    task.delay(0.25, function()
+                        if not isVisible then main.Visible = false end
                     end)
                 end
             else
@@ -315,13 +338,27 @@ function PulseUI:CreateWindow(cfg)
     end)
 
     -- ═══════════════════════════════════════
-    --  TAB CREATION
+    --  DYNAMIC SETTERS
+    -- ═══════════════════════════════════════
+    function Window:SetTitle(text)
+        titleLbl.Text = text
+    end
+
+    function Window:SetSubTitle(text)
+        subTitleLbl.Text = text
+    end
+
+    function Window:SetFooter(text)
+        footerLbl.Text = text
+    end
+
+    -- ═══════════════════════════════════════
+    --  ADD TAB
     -- ═══════════════════════════════════════
     function Window:AddTab(name)
         local Tab = {}
-        local tabIndex = #tabs -- 0, 1, 2...
-        
-        -- Кнопка таба
+        local tabIndex = #tabs
+
         local btn = Instance.new("TextButton")
         btn.Name = name
         btn.BackgroundColor3 = T.Hover
@@ -336,7 +373,6 @@ function PulseUI:CreateWindow(cfg)
         btn.Parent = tabBox
         rc(btn, 6)
 
-        -- Страница (ScrollingFrame)
         local page = Instance.new("ScrollingFrame")
         page.Name = name .. "_Page"
         page.BackgroundTransparency = 1
@@ -359,37 +395,29 @@ function PulseUI:CreateWindow(cfg)
 
         table.insert(tabs, {btn = btn, page = page})
 
-        -- Функция активации таба
         local function activate()
-            -- Деактивация всех
             for _, t in ipairs(tabs) do
                 t.page.Visible = false
                 tw(t.btn, {TextColor3 = T.Dim, BackgroundTransparency = 1}, 0.2)
             end
-            
-            -- Активация текущего
             page.Visible = true
             tw(btn, {TextColor3 = T.Text, BackgroundTransparency = 0.92}, 0.2)
-            
-            -- Движение индикатора
+
             local targetY = TAB_START_Y + (tabIndex * (BTN_HEIGHT + BTN_PAD))
             tw(indicator, {Position = UDim2.fromOffset(0, targetY)}, 0.35, Enum.EasingStyle.Quint)
         end
 
         btn.MouseButton1Click:Connect(activate)
-
-        -- Ховер эффект на таб
         btn.MouseEnter:Connect(function()
-            if not page.Visible then tw(btn, {BackgroundTransparency = 0.96}, 0.15) end
+            if not page.Visible then tw(btn, {BackgroundTransparency = 0.96}, 0.12) end
         end)
         btn.MouseLeave:Connect(function()
-            if not page.Visible then tw(btn, {BackgroundTransparency = 1}, 0.15) end
+            if not page.Visible then tw(btn, {BackgroundTransparency = 1}, 0.12) end
         end)
 
-        -- Активация первого таба при старте
         if firstTab then
             firstTab = false
-            task.delay(0.1, activate) -- Небольшая задержка для корректного UI
+            task.delay(0.1, activate)
         end
 
         -- ═══════════════════════════════════════
@@ -409,7 +437,7 @@ function PulseUI:CreateWindow(cfg)
             l.Size = UDim2.new(1, 0, 0, 12)
             l.Font = Enum.Font.GothamBold
             l.Text = string.upper(text)
-            l.TextColor3 = T.Accent
+            l.TextColor3 = T.AccentLight
             l.TextSize = 10
             l.TextXAlignment = Enum.TextXAlignment.Left
             l.Parent = s
@@ -421,7 +449,6 @@ function PulseUI:CreateWindow(cfg)
             line.Size = UDim2.new(1, 0, 0, 1)
             line.Parent = s
 
-            -- Градиент для линии (исчезает вправо)
             local grad = Instance.new("UIGradient")
             grad.Transparency = NumberSequence.new{
                 NumberSequenceKeypoint.new(0, 0),
@@ -441,7 +468,6 @@ function PulseUI:CreateWindow(cfg)
             l.TextSize = 13
             l.TextXAlignment = Enum.TextXAlignment.Left
             l.Parent = page
-            
             local obj = {}
             function obj:Set(v) l.Text = v end
             return obj
@@ -449,6 +475,7 @@ function PulseUI:CreateWindow(cfg)
 
         -- BUTTON
         function Tab:AddButton(c)
+            c = c or {}
             local b = Instance.new("TextButton")
             b.BackgroundColor3 = T.Elem
             b.Size = UDim2.new(1, 0, 0, 32)
@@ -459,12 +486,12 @@ function PulseUI:CreateWindow(cfg)
             b.AutoButtonColor = false
             b.Parent = page
             rc(b, 6)
-            
+
             local s = stroke(b, T.Line, 1, 0.4)
 
             b.MouseEnter:Connect(function()
                 tw(b, {BackgroundColor3 = T.Hover}, 0.15)
-                tw(s, {Color = T.Accent, Transparency = 0.2}, 0.15) -- Glow effect
+                tw(s, {Color = T.AccentLight, Transparency = 0.2}, 0.15)
             end)
             b.MouseLeave:Connect(function()
                 tw(b, {BackgroundColor3 = T.Elem}, 0.15)
@@ -472,15 +499,16 @@ function PulseUI:CreateWindow(cfg)
             end)
             b.MouseButton1Click:Connect(function()
                 tw(b, {BackgroundColor3 = T.Accent}, 0.05)
-                task.delay(0.05, function() tw(b, {BackgroundColor3 = T.Hover}, 0.15) end)
+                task.delay(0.06, function() tw(b, {BackgroundColor3 = T.Hover}, 0.15) end)
                 if c.Callback then task.spawn(c.Callback) end
             end)
         end
 
         -- TOGGLE
         function Tab:AddToggle(c)
+            c = c or {}
             local on = c.Default or false
-            
+
             local t = Instance.new("TextButton")
             t.BackgroundColor3 = T.Elem
             t.Size = UDim2.new(1, 0, 0, 36)
@@ -490,37 +518,37 @@ function PulseUI:CreateWindow(cfg)
             rc(t, 6)
             local s = stroke(t, T.Line, 1, 0.4)
 
-            local title = Instance.new("TextLabel")
-            title.BackgroundTransparency = 1
-            title.Position = UDim2.fromOffset(10, 0)
-            title.Size = UDim2.new(1, -60, 1, 0)
-            title.Font = Enum.Font.Gotham
-            title.Text = c.Name or "Toggle"
-            title.TextColor3 = T.Text
-            title.TextSize = 13
-            title.TextXAlignment = Enum.TextXAlignment.Left
-            title.Parent = t
+            local lbl = Instance.new("TextLabel")
+            lbl.BackgroundTransparency = 1
+            lbl.Position = UDim2.fromOffset(10, 0)
+            lbl.Size = UDim2.new(1, -60, 1, 0)
+            lbl.Font = Enum.Font.Gotham
+            lbl.Text = c.Name or "Toggle"
+            lbl.TextColor3 = T.Text
+            lbl.TextSize = 13
+            lbl.TextXAlignment = Enum.TextXAlignment.Left
+            lbl.Parent = t
 
-            -- Pill Background
             local pill = Instance.new("Frame")
-            pill.BackgroundColor3 = on and T.Accent or T.Off
+            pill.BackgroundColor3 = on and T.AccentLight or T.Off
             pill.AnchorPoint = Vector2.new(1, 0.5)
             pill.Position = UDim2.new(1, -10, 0.5, 0)
             pill.Size = UDim2.fromOffset(34, 18)
             pill.Parent = t
             rc(pill, 9)
 
-            -- Animated Dot
             local dot = Instance.new("Frame")
-            dot.BackgroundColor3 = Color3.new(1,1,1)
+            dot.BackgroundColor3 = Color3.new(1, 1, 1)
             dot.Position = on and UDim2.new(1, -16, 0.5, -6) or UDim2.new(0, 2, 0.5, -6)
             dot.Size = UDim2.fromOffset(12, 12)
             dot.Parent = pill
             rc(dot, 6)
 
             local function update()
-                tw(pill, {BackgroundColor3 = on and T.Accent or T.Off}, 0.2)
-                tw(dot, {Position = on and UDim2.new(1, -16, 0.5, -6) or UDim2.new(0, 2, 0.5, -6)}, 0.2, Enum.EasingStyle.Back)
+                tw(pill, {BackgroundColor3 = on and T.AccentLight or T.Off}, 0.2)
+                tw(dot, {
+                    Position = on and UDim2.new(1, -16, 0.5, -6) or UDim2.new(0, 2, 0.5, -6)
+                }, 0.2, Enum.EasingStyle.Back)
                 if c.Callback then task.spawn(c.Callback, on) end
             end
 
@@ -528,27 +556,28 @@ function PulseUI:CreateWindow(cfg)
                 on = not on
                 update()
             end)
-
             t.MouseEnter:Connect(function()
                 tw(t, {BackgroundColor3 = T.Hover}, 0.15)
-                tw(s, {Color = T.Accent, Transparency = 0.2}, 0.15)
+                tw(s, {Color = T.AccentLight, Transparency = 0.2}, 0.15)
             end)
             t.MouseLeave:Connect(function()
                 tw(t, {BackgroundColor3 = T.Elem}, 0.15)
                 tw(s, {Color = T.Line, Transparency = 0.4}, 0.15)
             end)
-            
+
             local obj = {}
             function obj:Set(v) on = v; update() end
+            function obj:Get() return on end
             return obj
         end
 
         -- SLIDER
         function Tab:AddSlider(c)
+            c = c or {}
             local min, max = c.Min or 0, c.Max or 100
             local val = math.clamp(c.Default or min, min, max)
-            local dragging = false
-            
+            local sliding = false
+
             local f = Instance.new("Frame")
             f.BackgroundColor3 = T.Elem
             f.Size = UDim2.new(1, 0, 0, 48)
@@ -556,16 +585,16 @@ function PulseUI:CreateWindow(cfg)
             rc(f, 6)
             local s = stroke(f, T.Line, 1, 0.4)
 
-            local title = Instance.new("TextLabel")
-            title.BackgroundTransparency = 1
-            title.Position = UDim2.fromOffset(10, 6)
-            title.Size = UDim2.new(1, -40, 0, 20)
-            title.Font = Enum.Font.Gotham
-            title.Text = c.Name or "Slider"
-            title.TextColor3 = T.Text
-            title.TextSize = 13
-            title.TextXAlignment = Enum.TextXAlignment.Left
-            title.Parent = f
+            local lbl = Instance.new("TextLabel")
+            lbl.BackgroundTransparency = 1
+            lbl.Position = UDim2.fromOffset(10, 6)
+            lbl.Size = UDim2.new(1, -50, 0, 20)
+            lbl.Font = Enum.Font.Gotham
+            lbl.Text = c.Name or "Slider"
+            lbl.TextColor3 = T.Text
+            lbl.TextSize = 13
+            lbl.TextXAlignment = Enum.TextXAlignment.Left
+            lbl.Parent = f
 
             local valLbl = Instance.new("TextLabel")
             valLbl.BackgroundTransparency = 1
@@ -574,7 +603,7 @@ function PulseUI:CreateWindow(cfg)
             valLbl.Size = UDim2.fromOffset(40, 20)
             valLbl.Font = Enum.Font.GothamBold
             valLbl.Text = tostring(val)
-            valLbl.TextColor3 = T.Accent
+            valLbl.TextColor3 = T.AccentLight
             valLbl.TextSize = 12
             valLbl.TextXAlignment = Enum.TextXAlignment.Right
             valLbl.Parent = f
@@ -586,13 +615,13 @@ function PulseUI:CreateWindow(cfg)
             track.Parent = f
             rc(track, 2)
 
+            local pct = (val - min) / math.max(max - min, 1)
             local fill = Instance.new("Frame")
             fill.BackgroundColor3 = T.Accent
-            fill.Size = UDim2.new((val-min)/(max-min), 0, 1, 0)
+            fill.Size = UDim2.new(pct, 0, 1, 0)
             fill.Parent = track
             rc(fill, 2)
 
-            -- Gradient on Slider Fill
             local grad = Instance.new("UIGradient")
             grad.Color = ColorSequence.new{
                 ColorSequenceKeypoint.new(0, T.AccentLight),
@@ -600,63 +629,72 @@ function PulseUI:CreateWindow(cfg)
             }
             grad.Parent = fill
 
-            -- Knob
             local knob = Instance.new("Frame")
-            knob.BackgroundColor3 = Color3.new(1,1,1)
+            knob.BackgroundColor3 = Color3.new(1, 1, 1)
             knob.AnchorPoint = Vector2.new(0.5, 0.5)
             knob.Position = UDim2.new(1, 0, 0.5, 0)
             knob.Size = UDim2.fromOffset(10, 10)
             knob.Parent = fill
             rc(knob, 5)
-            stroke(knob, T.Accent, 1, 0.2)
+            stroke(knob, T.AccentLight, 1, 0.2)
 
             local function update(input)
-                local sizeX = track.AbsoluteSize.X
-                if sizeX == 0 then return end
-                local percent = math.clamp((input.Position.X - track.AbsolutePosition.X) / sizeX, 0, 1)
-                val = math.floor(min + (max - min) * percent)
-                
+                local w = track.AbsoluteSize.X
+                if w == 0 then return end
+                local p = math.clamp((input.Position.X - track.AbsolutePosition.X) / w, 0, 1)
+                val = math.floor(min + (max - min) * p)
                 valLbl.Text = tostring(val)
-                fill.Size = UDim2.new(percent, 0, 1, 0)
-                
+                fill.Size = UDim2.new(p, 0, 1, 0)
                 if c.Callback then task.spawn(c.Callback, val) end
             end
 
             f.InputBegan:Connect(function(input)
                 if input.UserInputType == Enum.UserInputType.MouseButton1 or input.UserInputType == Enum.UserInputType.Touch then
-                    dragging = true
+                    sliding = true
                     update(input)
                 end
             end)
             UserInputService.InputEnded:Connect(function(input)
                 if input.UserInputType == Enum.UserInputType.MouseButton1 or input.UserInputType == Enum.UserInputType.Touch then
-                    dragging = false
+                    sliding = false
                 end
             end)
             UserInputService.InputChanged:Connect(function(input)
-                if dragging and (input.UserInputType == Enum.UserInputType.MouseMovement or input.UserInputType == Enum.UserInputType.Touch) then
+                if sliding and (input.UserInputType == Enum.UserInputType.MouseMovement or input.UserInputType == Enum.UserInputType.Touch) then
                     update(input)
                 end
             end)
 
             f.MouseEnter:Connect(function()
                 tw(f, {BackgroundColor3 = T.Hover}, 0.15)
-                tw(s, {Color = T.Accent, Transparency = 0.2}, 0.15)
+                tw(s, {Color = T.AccentLight, Transparency = 0.2}, 0.15)
             end)
             f.MouseLeave:Connect(function()
                 tw(f, {BackgroundColor3 = T.Elem}, 0.15)
                 tw(s, {Color = T.Line, Transparency = 0.4}, 0.15)
             end)
+
+            local obj = {}
+            function obj:Set(v)
+                val = math.clamp(v, min, max)
+                local p2 = (val - min) / math.max(max - min, 1)
+                fill.Size = UDim2.new(p2, 0, 1, 0)
+                valLbl.Text = tostring(val)
+                if c.Callback then task.spawn(c.Callback, val) end
+            end
+            function obj:Get() return val end
+            return obj
         end
 
         -- DROPDOWN
         function Tab:AddDropdown(c)
+            c = c or {}
             local opts = c.Options or {}
             local sel = c.Default or opts[1] or "None"
             local open = false
             local CLOSED_H = 38
             local OPT_H = 30
-            
+
             local f = Instance.new("Frame")
             f.BackgroundColor3 = T.Elem
             f.Size = UDim2.new(1, 0, 0, CLOSED_H)
@@ -665,22 +703,22 @@ function PulseUI:CreateWindow(cfg)
             rc(f, 6)
             local s = stroke(f, T.Line, 1, 0.4)
 
-            local btn = Instance.new("TextButton")
-            btn.BackgroundTransparency = 1
-            btn.Size = UDim2.new(1, 0, 0, CLOSED_H)
-            btn.Text = ""
-            btn.Parent = f
+            local header = Instance.new("TextButton")
+            header.BackgroundTransparency = 1
+            header.Size = UDim2.new(1, 0, 0, CLOSED_H)
+            header.Text = ""
+            header.Parent = f
 
-            local title = Instance.new("TextLabel")
-            title.BackgroundTransparency = 1
-            title.Position = UDim2.fromOffset(10, 0)
-            title.Size = UDim2.new(0.5, 0, 1, 0)
-            title.Font = Enum.Font.Gotham
-            title.Text = c.Name or "Dropdown"
-            title.TextColor3 = T.Text
-            title.TextSize = 13
-            title.TextXAlignment = Enum.TextXAlignment.Left
-            title.Parent = btn
+            local lbl = Instance.new("TextLabel")
+            lbl.BackgroundTransparency = 1
+            lbl.Position = UDim2.fromOffset(10, 0)
+            lbl.Size = UDim2.new(0.5, 0, 1, 0)
+            lbl.Font = Enum.Font.Gotham
+            lbl.Text = c.Name or "Dropdown"
+            lbl.TextColor3 = T.Text
+            lbl.TextSize = 13
+            lbl.TextXAlignment = Enum.TextXAlignment.Left
+            lbl.Parent = header
 
             local disp = Instance.new("TextLabel")
             disp.BackgroundTransparency = 1
@@ -689,12 +727,11 @@ function PulseUI:CreateWindow(cfg)
             disp.Size = UDim2.new(0.4, 0, 1, 0)
             disp.Font = Enum.Font.GothamBold
             disp.Text = sel
-            disp.TextColor3 = T.Accent
+            disp.TextColor3 = T.AccentLight
             disp.TextSize = 12
             disp.TextXAlignment = Enum.TextXAlignment.Right
-            disp.Parent = btn
+            disp.Parent = header
 
-            -- Animated Arrow
             local arrow = Instance.new("TextLabel")
             arrow.BackgroundTransparency = 1
             arrow.AnchorPoint = Vector2.new(1, 0.5)
@@ -705,9 +742,8 @@ function PulseUI:CreateWindow(cfg)
             arrow.TextColor3 = T.Dim
             arrow.TextSize = 18
             arrow.Font = Enum.Font.GothamBold
-            arrow.Parent = btn
+            arrow.Parent = header
 
-            -- Options List
             local listFrame = Instance.new("Frame")
             listFrame.BackgroundTransparency = 1
             listFrame.Position = UDim2.fromOffset(0, CLOSED_H)
@@ -729,11 +765,15 @@ function PulseUI:CreateWindow(cfg)
                     b.Size = UDim2.new(1, 0, 0, OPT_H)
                     b.Font = Enum.Font.Gotham
                     b.Text = "  " .. opt
-                    b.TextColor3 = (opt == sel) and T.Accent or T.Dim
+                    b.TextColor3 = (opt == sel) and T.AccentLight or T.Dim
                     b.TextSize = 12
                     b.TextXAlignment = Enum.TextXAlignment.Left
+                    b.AutoButtonColor = false
                     b.Parent = listFrame
-                    
+
+                    b.MouseEnter:Connect(function() tw(b, {BackgroundTransparency = 0}, 0.1) end)
+                    b.MouseLeave:Connect(function() tw(b, {BackgroundTransparency = 1}, 0.1) end)
+
                     b.MouseButton1Click:Connect(function()
                         sel = opt
                         disp.Text = sel
@@ -741,11 +781,9 @@ function PulseUI:CreateWindow(cfg)
                         tw(f, {Size = UDim2.new(1, 0, 0, CLOSED_H)}, 0.25)
                         tw(arrow, {Rotation = 90}, 0.25)
                         if c.Callback then task.spawn(c.Callback, sel) end
-                        
-                        -- Update Highlight
                         for _, x in ipairs(listFrame:GetChildren()) do
                             if x:IsA("TextButton") then
-                                x.TextColor3 = (x.Text:sub(3) == sel) and T.Accent or T.Dim
+                                x.TextColor3 = (x.Text:sub(3) == sel) and T.AccentLight or T.Dim
                             end
                         end
                     end)
@@ -753,31 +791,35 @@ function PulseUI:CreateWindow(cfg)
             end
             buildOpts()
 
-            btn.MouseButton1Click:Connect(function()
+            header.MouseButton1Click:Connect(function()
                 open = not open
                 tw(arrow, {Rotation = open and -90 or 90}, 0.25)
                 tw(f, {Size = UDim2.new(1, 0, 0, open and (CLOSED_H + #opts * OPT_H) or CLOSED_H)}, 0.25)
             end)
-            
-            btn.MouseEnter:Connect(function() tw(s, {Color = T.Accent, Transparency = 0.2}, 0.15) end)
-            btn.MouseLeave:Connect(function() tw(s, {Color = T.Line, Transparency = 0.4}, 0.15) end)
-            
+
+            header.MouseEnter:Connect(function() tw(s, {Color = T.AccentLight, Transparency = 0.2}, 0.15) end)
+            header.MouseLeave:Connect(function() tw(s, {Color = T.Line, Transparency = 0.4}, 0.15) end)
+
             local obj = {}
             function obj:Refresh(newOpts)
                 opts = newOpts
                 sel = opts[1] or "None"
                 disp.Text = sel
                 buildOpts()
-                if open then tw(f, {Size = UDim2.new(1, 0, 0, CLOSED_H + #opts * OPT_H)}, 0.25) end
+                if open then
+                    tw(f, {Size = UDim2.new(1, 0, 0, CLOSED_H + #opts * OPT_H)}, 0.25)
+                end
             end
+            function obj:Get() return sel end
             return obj
         end
 
         -- KEYBIND
         function Tab:AddKeybind(c)
+            c = c or {}
             local key = c.Default or Enum.KeyCode.RightShift
             local listening = false
-            
+
             local f = Instance.new("TextButton")
             f.BackgroundColor3 = T.Elem
             f.Size = UDim2.new(1, 0, 0, 34)
@@ -787,16 +829,16 @@ function PulseUI:CreateWindow(cfg)
             rc(f, 6)
             local s = stroke(f, T.Line, 1, 0.4)
 
-            local title = Instance.new("TextLabel")
-            title.BackgroundTransparency = 1
-            title.Position = UDim2.fromOffset(10, 0)
-            title.Size = UDim2.new(1, -50, 1, 0)
-            title.Font = Enum.Font.Gotham
-            title.Text = c.Name or "Keybind"
-            title.TextColor3 = T.Text
-            title.TextSize = 13
-            title.TextXAlignment = Enum.TextXAlignment.Left
-            title.Parent = f
+            local lbl = Instance.new("TextLabel")
+            lbl.BackgroundTransparency = 1
+            lbl.Position = UDim2.fromOffset(10, 0)
+            lbl.Size = UDim2.new(1, -60, 1, 0)
+            lbl.Font = Enum.Font.Gotham
+            lbl.Text = c.Name or "Keybind"
+            lbl.TextColor3 = T.Text
+            lbl.TextSize = 13
+            lbl.TextXAlignment = Enum.TextXAlignment.Left
+            lbl.Parent = f
 
             local kDisp = Instance.new("Frame")
             kDisp.BackgroundColor3 = T.Off
@@ -811,7 +853,7 @@ function PulseUI:CreateWindow(cfg)
             kLbl.Size = UDim2.new(1, 0, 1, 0)
             kLbl.Font = Enum.Font.GothamBold
             kLbl.Text = key.Name
-            kLbl.TextColor3 = T.Accent
+            kLbl.TextColor3 = T.AccentLight
             kLbl.TextSize = 11
             kLbl.Parent = kDisp
 
@@ -819,109 +861,131 @@ function PulseUI:CreateWindow(cfg)
                 listening = true
                 kLbl.Text = "..."
                 tw(kDisp, {BackgroundColor3 = T.Accent}, 0.15)
-                tw(kLbl, {TextColor3 = Color3.new(1,1,1)}, 0.15)
+                tw(kLbl, {TextColor3 = Color3.new(1, 1, 1)}, 0.15)
             end)
 
-            UserInputService.InputBegan:Connect(function(input)
+            UserInputService.InputBegan:Connect(function(input, gpe)
                 if listening and input.UserInputType == Enum.UserInputType.Keyboard then
                     listening = false
-                    key = input.KeyCode
-                    kLbl.Text = key.Name
+                    if input.KeyCode == Enum.KeyCode.Escape then
+                        key = Enum.KeyCode.Unknown
+                        kLbl.Text = "None"
+                    else
+                        key = input.KeyCode
+                        kLbl.Text = key.Name
+                    end
                     tw(kDisp, {BackgroundColor3 = T.Off}, 0.15)
-                    tw(kLbl, {TextColor3 = T.Accent}, 0.15)
+                    tw(kLbl, {TextColor3 = T.AccentLight}, 0.15)
                     if c.Callback then task.spawn(c.Callback, key) end
-                elseif not listening and input.KeyCode == key then
+                    return
+                end
+                if gpe or listening then return end
+                if key ~= Enum.KeyCode.Unknown and input.KeyCode == key then
                     if c.Callback then task.spawn(c.Callback, key) end
                 end
             end)
 
-            f.MouseEnter:Connect(function() tw(s, {Color = T.Accent, Transparency = 0.2}, 0.15) end)
+            f.MouseEnter:Connect(function() tw(s, {Color = T.AccentLight, Transparency = 0.2}, 0.15) end)
             f.MouseLeave:Connect(function() tw(s, {Color = T.Line, Transparency = 0.4}, 0.15) end)
+
+            local obj = {}
+            function obj:SetKey(k) key = k; kLbl.Text = (k ~= Enum.KeyCode.Unknown) and k.Name or "None" end
+            function obj:GetKey() return key end
+            return obj
         end
 
         return Tab
     end
 
     -- ═══════════════════════════════════════
-    --  NOTIFICATIONS
+    --  NOTIFICATIONS (STACKING)
     -- ═══════════════════════════════════════
+    local function repositionNotifs()
+        for i, notifFrame in ipairs(activeNotifs) do
+            local fromBottom = #activeNotifs - i
+            local targetY = -20 - fromBottom * (NOTIF_H + NOTIF_GAP)
+            tw(notifFrame, {Position = UDim2.new(1, -20, 1, targetY)}, 0.35)
+        end
+    end
+
     function Window:Notify(c)
+        c = c or {}
         local dur = c.Duration or 4
-        
+
         local n = Instance.new("Frame")
         n.BackgroundColor3 = T.TopBar
         n.BorderSizePixel = 0
         n.AnchorPoint = Vector2.new(1, 1)
-        n.Position = UDim2.new(1, 20, 1, -20) -- Start off screen
-        n.Size = UDim2.fromOffset(260, 64)
+        n.Position = UDim2.new(1, 300, 1, -20)
+        n.Size = UDim2.fromOffset(260, NOTIF_H)
+        n.ClipsDescendants = true
         n.Parent = sg
         rc(n, 8)
-        stroke(n, T.Accent, 1, 0.5)
+        stroke(n, T.Accent, 1, 0.35)
 
         local bar = Instance.new("Frame")
-        bar.BackgroundColor3 = T.Accent
+        bar.BackgroundColor3 = T.AccentLight
         bar.BorderSizePixel = 0
-        bar.Size = UDim2.new(0, 4, 1, 0)
+        bar.Size = UDim2.new(0, 3, 1, 0)
         bar.Parent = n
-        
-        -- Скругление только слева для полоски
-        local barCorner = Instance.new("UICorner")
-        barCorner.CornerRadius = UDim.new(0, 8)
-        barCorner.Parent = bar
-        -- Обрезаем чтобы было ровно
-        local clip = Instance.new("Frame")
-        clip.BackgroundTransparency = 1
-        clip.ClipsDescendants = true
-        clip.Size = UDim2.new(1,0,1,0)
-        clip.Parent = n
-        bar.Parent = clip
 
-        local title = Instance.new("TextLabel")
-        title.BackgroundTransparency = 1
-        title.Position = UDim2.fromOffset(14, 8)
-        title.Size = UDim2.new(1, -20, 0, 16)
-        title.Font = Enum.Font.GothamBold
-        title.Text = c.Title or "Notification"
-        title.TextColor3 = T.Text
-        title.TextSize = 13
-        title.TextXAlignment = Enum.TextXAlignment.Left
-        title.Parent = n
+        local nt = Instance.new("TextLabel")
+        nt.BackgroundTransparency = 1
+        nt.Position = UDim2.fromOffset(14, 10)
+        nt.Size = UDim2.new(1, -20, 0, 16)
+        nt.Font = Enum.Font.GothamBold
+        nt.Text = c.Title or "Notification"
+        nt.TextColor3 = T.Text
+        nt.TextSize = 13
+        nt.TextXAlignment = Enum.TextXAlignment.Left
+        nt.Parent = n
 
-        local msg = Instance.new("TextLabel")
-        msg.BackgroundTransparency = 1
-        msg.Position = UDim2.fromOffset(14, 26)
-        msg.Size = UDim2.new(1, -20, 0, 24)
-        msg.Font = Enum.Font.Gotham
-        msg.Text = c.Content or "Alert message here"
-        msg.TextColor3 = T.Dim
-        msg.TextSize = 12
-        msg.TextXAlignment = Enum.TextXAlignment.Left
-        msg.TextWrapped = true
-        msg.Parent = n
+        local nm = Instance.new("TextLabel")
+        nm.BackgroundTransparency = 1
+        nm.Position = UDim2.fromOffset(14, 30)
+        nm.Size = UDim2.new(1, -20, 0, 26)
+        nm.Font = Enum.Font.Gotham
+        nm.Text = c.Content or ""
+        nm.TextColor3 = T.Dim
+        nm.TextSize = 12
+        nm.TextXAlignment = Enum.TextXAlignment.Left
+        nm.TextWrapped = true
+        nm.Parent = n
 
-        -- Timer Bar
         local timer = Instance.new("Frame")
-        timer.BackgroundColor3 = T.Accent
+        timer.BackgroundColor3 = T.AccentLight
         timer.BorderSizePixel = 0
         timer.Position = UDim2.new(0, 0, 1, -2)
         timer.Size = UDim2.new(1, 0, 0, 2)
         timer.Parent = n
 
-        -- Animate In
-        tw(n, {Position = UDim2.new(1, -20, 1, -20)}, 0.4, Enum.EasingStyle.Back)
-        -- Animate Timer
+        -- Add to stack and reposition all
+        table.insert(activeNotifs, n)
+        repositionNotifs()
+
+        -- Timer bar animation
         tw(timer, {Size = UDim2.new(0, 0, 0, 2)}, dur, Enum.EasingStyle.Linear)
-        
+
+        -- Auto-remove after duration
         task.delay(dur, function()
-            tw(n, {Position = UDim2.new(1, 300, 1, -20)}, 0.4, Enum.EasingStyle.Back)
-            task.delay(0.4, function() n:Destroy() end)
+            local idx = table.find(activeNotifs, n)
+            if idx then table.remove(activeNotifs, idx) end
+
+            tw(n, {Position = UDim2.new(1, 300, 1, n.Position.Y.Offset)}, 0.4, Enum.EasingStyle.Back)
+            repositionNotifs()
+
+            task.delay(0.45, function() n:Destroy() end)
         end)
     end
 
+    -- ═══════════════════════════════════════
+    --  DESTROY
+    -- ═══════════════════════════════════════
     function Window:Destroy()
         if canvasSupport then
             tw(main, {GroupTransparency = 1}, 0.3)
-            task.delay(0.3, function() sg:Destroy() end)
+            tw(uiScale, {Scale = 0.9}, 0.3)
+            task.delay(0.35, function() sg:Destroy() end)
         else
             sg:Destroy()
         end
