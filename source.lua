@@ -1,6 +1,6 @@
 --[[ 
-    Custom UI Library by ChatGPT
-    Style: Modern Dark / Sidebar Profile
+    PulseUI - Custom Library (v2 Refined)
+    Style: High Contrast, Yellow Accent, Strokes, Compact
 ]]
 
 local Library = {}
@@ -8,30 +8,29 @@ local TweenService = game:GetService("TweenService")
 local UserInputService = game:GetService("UserInputService")
 local Players = game:GetService("Players")
 local LocalPlayer = Players.LocalPlayer
+local CoreGui = game:GetService("CoreGui")
 
--- Настройки цветов
+-- // НАСТРОЙКИ ЦВЕТОВ //
 local Colors = {
-    Background = Color3.fromRGB(25, 25, 25),       -- Основной фон
-    Sidebar = Color3.fromRGB(30, 30, 30),          -- Боковая панель
-    Element = Color3.fromRGB(40, 40, 40),          -- Фон кнопок
-    Hover = Color3.fromRGB(50, 50, 50),            -- При наведении
-    Accent = Color3.fromRGB(0, 120, 215),          -- Акцентный цвет (синий)
-    Text = Color3.fromRGB(240, 240, 240),          -- Текст
-    TextDark = Color3.fromRGB(150, 150, 150)       -- Вторичный текст
+    Main        = Color3.fromRGB(18, 18, 18),       -- Глубокий темный фон
+    Sidebar     = Color3.fromRGB(25, 25, 25),       -- Боковая панель
+    Section     = Color3.fromRGB(30, 30, 30),       -- Фон элементов
+    Stroke      = Color3.fromRGB(50, 50, 50),       -- Цвет обводки (рамок)
+    Accent      = Color3.fromRGB(255, 215, 0),      -- ЖЕЛТЫЙ (Gold)
+    Text        = Color3.fromRGB(255, 255, 255),    -- Белый текст
+    TextDark    = Color3.fromRGB(130, 130, 130)     -- Серый текст
 }
 
--- Функция для драга (перетаскивания)
+-- // УТИЛИТЫ //
 local function MakeDraggable(topbarobject, object)
-    local Dragging = nil
-    local DragInput = nil
-    local DragStart = nil
-    local StartPosition = nil
-
+    local Dragging, DragInput, DragStart, StartPosition
+    
     local function Update(input)
         local Delta = input.Position - DragStart
-        object.Position = UDim2.new(StartPosition.X.Scale, StartPosition.X.Offset + Delta.X, StartPosition.Y.Scale, StartPosition.Y.Offset + Delta.Y)
+        local Position = UDim2.new(StartPosition.X.Scale, StartPosition.X.Offset + Delta.X, StartPosition.Y.Scale, StartPosition.Y.Offset + Delta.Y)
+        TweenService:Create(object, TweenInfo.new(0.1), {Position = Position}):Play()
     end
-
+    
     topbarobject.InputBegan:Connect(function(input)
         if input.UserInputType == Enum.UserInputType.MouseButton1 or input.UserInputType == Enum.UserInputType.Touch then
             Dragging = true
@@ -45,13 +44,13 @@ local function MakeDraggable(topbarobject, object)
             end)
         end
     end)
-
+    
     topbarobject.InputChanged:Connect(function(input)
         if input.UserInputType == Enum.UserInputType.MouseMovement or input.UserInputType == Enum.UserInputType.Touch then
             DragInput = input
         end
     end)
-
+    
     UserInputService.InputChanged:Connect(function(input)
         if input == DragInput and Dragging then
             Update(input)
@@ -59,367 +58,367 @@ local function MakeDraggable(topbarobject, object)
     end)
 end
 
--- Функция создания основного окна
-function Library:Window(Name)
+local function AddStroke(instance, thickness, color)
+    local stroke = Instance.new("UIStroke")
+    stroke.Thickness = thickness or 1
+    stroke.Color = color or Colors.Stroke
+    stroke.ApplyStrokeMode = Enum.ApplyStrokeMode.Border
+    stroke.Parent = instance
+    return stroke
+end
+
+-- // ГЛАВНАЯ ФУНКЦИЯ //
+function Library:Window(HubName)
     local UI = {}
     
-    -- Создаем ScreenGui
+    -- Удаляем старое, если есть
+    if CoreGui:FindFirstChild("PulseUI_v2") then
+        CoreGui.PulseUI_v2:Destroy()
+    end
+
     local ScreenGui = Instance.new("ScreenGui")
-    ScreenGui.Name = "CustomLib"
-    ScreenGui.Parent = game:GetService("CoreGui") -- Или LocalPlayer.PlayerGui для теста в Studio
+    ScreenGui.Name = "PulseUI_v2"
+    ScreenGui.Parent = CoreGui
     ScreenGui.ResetOnSpawn = false
 
-    -- Главный фрейм
+    -- === MAIN FRAME (Уменьшил размер) ===
     local MainFrame = Instance.new("Frame")
     MainFrame.Name = "MainFrame"
-    MainFrame.Size = UDim2.new(0, 600, 0, 400)
-    MainFrame.Position = UDim2.new(0.5, -300, 0.5, -200)
-    MainFrame.BackgroundColor3 = Colors.Background
+    MainFrame.Size = UDim2.new(0, 500, 0, 320) -- Компактнее (было 600x400)
+    MainFrame.Position = UDim2.new(0.5, -250, 0.5, -160)
+    MainFrame.BackgroundColor3 = Colors.Main
     MainFrame.BorderSizePixel = 0
     MainFrame.Parent = ScreenGui
     
-    local MainCorner = Instance.new("UICorner")
-    MainCorner.CornerRadius = UDim.new(0, 10)
-    MainCorner.Parent = MainFrame
+    local MainCorner = Instance.new("UICorner"); MainCorner.CornerRadius = UDim.new(0, 6); MainCorner.Parent = MainFrame
+    AddStroke(MainFrame, 2, Color3.fromRGB(60, 60, 60)) -- Жирная обводка снаружи
 
-    MakeDraggable(MainFrame, MainFrame) -- Делаем окно перетаскиваемым
+    MakeDraggable(MainFrame, MainFrame)
 
-    -- Боковая панель (Sidebar)
+    -- === SIDEBAR ===
     local Sidebar = Instance.new("Frame")
     Sidebar.Name = "Sidebar"
-    Sidebar.Size = UDim2.new(0, 180, 1, 0)
+    Sidebar.Size = UDim2.new(0, 140, 1, 0) -- Уже (было 180)
     Sidebar.BackgroundColor3 = Colors.Sidebar
     Sidebar.BorderSizePixel = 0
     Sidebar.Parent = MainFrame
+    
+    local SideCorner = Instance.new("UICorner"); SideCorner.CornerRadius = UDim.new(0, 6); SideCorner.Parent = Sidebar
+    
+    -- Fix Right Corner of Sidebar
+    local FixSide = Instance.new("Frame"); FixSide.Size = UDim2.new(0, 10, 1, 0); FixSide.Position = UDim2.new(1, -10, 0, 0); FixSide.BackgroundColor3 = Colors.Sidebar; FixSide.BorderSizePixel = 0; FixSide.Parent = Sidebar
 
-    local SidebarCorner = Instance.new("UICorner")
-    SidebarCorner.CornerRadius = UDim.new(0, 10)
-    SidebarCorner.Parent = Sidebar
+    -- Разделительная линия
+    local Sep = Instance.new("Frame")
+    Sep.Size = UDim2.new(0, 1, 1, 0)
+    Sep.Position = UDim2.new(1, 0, 0, 0)
+    Sep.BackgroundColor3 = Colors.Stroke
+    Sep.BorderSizePixel = 0
+    Sep.Parent = Sidebar
 
-    -- Исправляем углы сайдбара (чтобы справа было прямо)
-    local FixPatch = Instance.new("Frame")
-    FixPatch.Size = UDim2.new(0, 10, 1, 0)
-    FixPatch.Position = UDim2.new(1, -10, 0, 0)
-    FixPatch.BackgroundColor3 = Colors.Sidebar
-    FixPatch.BorderSizePixel = 0
-    FixPatch.Parent = Sidebar
-
-    -- Заголовок скрипта
+    -- Title
     local Title = Instance.new("TextLabel")
-    Title.Text = Name
-    Title.Size = UDim2.new(1, -20, 0, 40)
-    Title.Position = UDim2.new(0, 10, 0, 10)
-    Title.Font = Enum.Font.GothamBold
-    Title.TextSize = 18
-    Title.TextColor3 = Colors.Text
+    Title.Text = HubName
+    Title.Size = UDim2.new(1, -10, 0, 30)
+    Title.Position = UDim2.new(0, 10, 0, 8)
+    Title.Font = Enum.Font.GothamBlack -- Максимально жирный
+    Title.TextColor3 = Colors.Accent -- Желтый заголовок
+    Title.TextSize = 16
     Title.BackgroundTransparency = 1
     Title.TextXAlignment = Enum.TextXAlignment.Left
     Title.Parent = Sidebar
 
-    -- Контейнер для кнопок вкладок
-    local TabButtonContainer = Instance.new("ScrollingFrame")
-    TabButtonContainer.Size = UDim2.new(1, 0, 1, -110) -- Оставляем место под профиль
-    TabButtonContainer.Position = UDim2.new(0, 0, 0, 60)
-    TabButtonContainer.BackgroundTransparency = 1
-    TabButtonContainer.ScrollBarThickness = 0
-    TabButtonContainer.Parent = Sidebar
+    -- === TAB CONTAINER ===
+    local TabContainer = Instance.new("ScrollingFrame")
+    TabContainer.Size = UDim2.new(1, 0, 1, -90) -- Место под профиль
+    TabContainer.Position = UDim2.new(0, 0, 0, 45)
+    TabContainer.BackgroundTransparency = 1
+    TabContainer.ScrollBarThickness = 0
+    TabContainer.Parent = Sidebar
     
-    local TabListLayout = Instance.new("UIListLayout")
-    TabListLayout.Padding = UDim.new(0, 5)
-    TabListLayout.SortOrder = Enum.SortOrder.LayoutOrder
-    TabListLayout.HorizontalAlignment = Enum.HorizontalAlignment.Center
-    TabListLayout.Parent = TabButtonContainer
+    local TabList = Instance.new("UIListLayout")
+    TabList.Padding = UDim.new(0, 4)
+    TabList.SortOrder = Enum.SortOrder.LayoutOrder
+    TabList.HorizontalAlignment = Enum.HorizontalAlignment.Center
+    TabList.Parent = TabContainer
 
-    -- Профиль игрока (снизу слева)
+    -- === PROFILE (Compact) ===
     local ProfileFrame = Instance.new("Frame")
-    ProfileFrame.Size = UDim2.new(1, -20, 0, 50)
-    ProfileFrame.Position = UDim2.new(0, 10, 1, -60)
-    ProfileFrame.BackgroundColor3 = Colors.Element
-    ProfileFrame.BorderSizePixel = 0
+    ProfileFrame.Size = UDim2.new(1, -12, 0, 40)
+    ProfileFrame.Position = UDim2.new(0, 6, 1, -46)
+    ProfileFrame.BackgroundColor3 = Color3.fromRGB(20, 20, 20)
     ProfileFrame.Parent = Sidebar
-    
-    local ProfileCorner = Instance.new("UICorner")
-    ProfileCorner.CornerRadius = UDim.new(0, 8)
-    ProfileCorner.Parent = ProfileFrame
-    
+    local ProfCorner = Instance.new("UICorner"); ProfCorner.CornerRadius = UDim.new(0, 4); ProfCorner.Parent = ProfileFrame
+    AddStroke(ProfileFrame, 1, Colors.Stroke)
+
     local Avatar = Instance.new("ImageLabel")
-    Avatar.Size = UDim2.new(0, 36, 0, 36)
-    Avatar.Position = UDim2.new(0, 7, 0, 7)
-    Avatar.BackgroundColor3 = Color3.new(0,0,0)
-    Avatar.BackgroundTransparency = 1
+    Avatar.Size = UDim2.new(0, 28, 0, 28)
+    Avatar.Position = UDim2.new(0, 6, 0.5, -14)
+    Avatar.BackgroundColor3 = Colors.Background
     Avatar.Image = Players:GetUserThumbnailAsync(LocalPlayer.UserId, Enum.ThumbnailType.HeadShot, Enum.ThumbnailSize.Size48x48)
     Avatar.Parent = ProfileFrame
-    
-    local AvatarCorner = Instance.new("UICorner"); AvatarCorner.CornerRadius = UDim.new(1,0); AvatarCorner.Parent = Avatar
-    
-    local Username = Instance.new("TextLabel")
-    Username.Text = LocalPlayer.Name
-    Username.Size = UDim2.new(1, -60, 0, 20)
-    Username.Position = UDim2.new(0, 50, 0, 8)
-    Username.Font = Enum.Font.GothamBold
-    Username.TextSize = 12
-    Username.TextColor3 = Colors.Text
-    Username.BackgroundTransparency = 1
-    Username.TextXAlignment = Enum.TextXAlignment.Left
-    Username.Parent = ProfileFrame
-    
-    local DisplayName = Instance.new("TextLabel")
-    DisplayName.Text = "User" -- Можно сделать LocalPlayer.DisplayName
-    DisplayName.Size = UDim2.new(1, -60, 0, 15)
-    DisplayName.Position = UDim2.new(0, 50, 0, 26)
-    DisplayName.Font = Enum.Font.Gotham
-    DisplayName.TextSize = 10
-    DisplayName.TextColor3 = Colors.TextDark
-    DisplayName.BackgroundTransparency = 1
-    DisplayName.TextXAlignment = Enum.TextXAlignment.Left
-    DisplayName.Parent = ProfileFrame
+    local AvCorner = Instance.new("UICorner"); AvCorner.CornerRadius = UDim.new(0, 4); AvCorner.Parent = Avatar
 
-    -- Контейнер для страниц (справа)
-    local PagesContainer = Instance.new("Frame")
-    PagesContainer.Size = UDim2.new(1, -200, 1, -20)
-    PagesContainer.Position = UDim2.new(0, 190, 0, 10)
-    PagesContainer.BackgroundTransparency = 1
-    PagesContainer.Parent = MainFrame
+    local NameLabel = Instance.new("TextLabel")
+    NameLabel.Text = LocalPlayer.Name
+    NameLabel.Size = UDim2.new(1, -40, 1, 0)
+    NameLabel.Position = UDim2.new(0, 40, 0, 0)
+    NameLabel.Font = Enum.Font.GothamBold
+    NameLabel.TextColor3 = Colors.Text
+    NameLabel.TextSize = 11
+    NameLabel.BackgroundTransparency = 1
+    NameLabel.TextXAlignment = Enum.TextXAlignment.Left
+    NameLabel.Parent = ProfileFrame
 
-    -- Логика вкладок
-    local Tabs = {}
+    -- === PAGES CONTAINER ===
+    local Pages = Instance.new("Frame")
+    Pages.Size = UDim2.new(1, -150, 1, -20)
+    Pages.Position = UDim2.new(0, 150, 0, 10)
+    Pages.BackgroundTransparency = 1
+    Pages.Parent = MainFrame
+
+    -- === TABS LOGIC ===
     local FirstTab = true
 
-    function UI:Tab(TabName)
-        local Tab = {}
+    function UI:Tab(Name)
+        local TabFuncs = {}
         
-        -- Кнопка табы
-        local TabButton = Instance.new("TextButton")
-        TabButton.Text = TabName
-        TabButton.Size = UDim2.new(0, 160, 0, 35)
-        TabButton.BackgroundColor3 = Colors.Sidebar
-        TabButton.TextColor3 = Colors.TextDark
-        TabButton.Font = Enum.Font.GothamBold
-        TabButton.TextSize = 13
-        TabButton.AutoButtonColor = false
-        TabButton.Parent = TabButtonContainer
-        
-        local TabBtnCorner = Instance.new("UICorner"); TabBtnCorner.CornerRadius = UDim.new(0, 6); TabBtnCorner.Parent = TabButton
+        -- Кнопка Таба
+        local TabBtn = Instance.new("TextButton")
+        TabBtn.Text = Name
+        TabBtn.Size = UDim2.new(0, 120, 0, 26)
+        TabBtn.BackgroundColor3 = Colors.Sidebar
+        TabBtn.BackgroundTransparency = 1
+        TabBtn.Font = Enum.Font.GothamBold -- Жирный шрифт
+        TabBtn.TextSize = 12
+        TabBtn.TextColor3 = Colors.TextDark
+        TabBtn.AutoButtonColor = false
+        TabBtn.Parent = TabContainer
 
-        -- Страница (скролл)
+        -- Индикатор слева от таба (желтая полоска)
+        local Indicator = Instance.new("Frame")
+        Indicator.Size = UDim2.new(0, 3, 0, 16)
+        Indicator.Position = UDim2.new(0, 0, 0.5, -8)
+        Indicator.BackgroundColor3 = Colors.Accent
+        Indicator.BorderSizePixel = 0
+        Indicator.Visible = false
+        Indicator.Parent = TabBtn
+
+        -- Страница
         local Page = Instance.new("ScrollingFrame")
-        Page.Name = TabName .. "_Page"
         Page.Size = UDim2.new(1, 0, 1, 0)
         Page.BackgroundTransparency = 1
         Page.ScrollBarThickness = 2
         Page.ScrollBarImageColor3 = Colors.Accent
         Page.Visible = false
-        Page.Parent = PagesContainer
+        Page.Parent = Pages
         
         local PageLayout = Instance.new("UIListLayout")
-        PageLayout.Padding = UDim.new(0, 8)
+        PageLayout.Padding = UDim.new(0, 6) -- Меньше отступ между элементами
         PageLayout.SortOrder = Enum.SortOrder.LayoutOrder
         PageLayout.Parent = Page
-        
+
         PageLayout:GetPropertyChangedSignal("AbsoluteContentSize"):Connect(function()
             Page.CanvasSize = UDim2.new(0, 0, 0, PageLayout.AbsoluteContentSize.Y + 10)
         end)
 
-        -- Активация первой табы
-        if FirstTab then
-            FirstTab = false
-            Page.Visible = true
-            TabButton.BackgroundColor3 = Colors.Element
-            TabButton.TextColor3 = Colors.Text
-        end
-
-        -- Клик по табу
-        TabButton.MouseButton1Click:Connect(function()
-            -- Сброс всех
-            for _, btn in pairs(TabButtonContainer:GetChildren()) do
-                if btn:IsA("TextButton") then
-                    TweenService:Create(btn, TweenInfo.new(0.2), {BackgroundColor3 = Colors.Sidebar, TextColor3 = Colors.TextDark}):Play()
+        -- Функция переключения
+        local function Activate()
+            -- Сброс остальных
+            for _, v in pairs(TabContainer:GetChildren()) do
+                if v:IsA("TextButton") then
+                    TweenService:Create(v, TweenInfo.new(0.2), {TextColor3 = Colors.TextDark}):Play()
+                    if v:FindFirstChild("Frame") then v.Frame.Visible = false end
                 end
             end
-            for _, pg in pairs(PagesContainer:GetChildren()) do
-                pg.Visible = false
+            for _, p in pairs(Pages:GetChildren()) do
+                p.Visible = false
             end
             
-            -- Активация текущей
+            -- Активация текущего
             Page.Visible = true
-            TweenService:Create(TabButton, TweenInfo.new(0.2), {BackgroundColor3 = Colors.Element, TextColor3 = Colors.Text}):Play()
-        end)
+            Indicator.Visible = true
+            TweenService:Create(TabBtn, TweenInfo.new(0.2), {TextColor3 = Colors.Text}):Play() -- Белый текст активного таба
+        end
 
-        -- ЭЛЕМЕНТЫ ВНУТРИ ТАБА --
+        TabBtn.MouseButton1Click:Connect(Activate)
 
-        -- 1. BUTTON
-        function Tab:Button(Text, Callback)
-            local Callback = Callback or function() end
-            
-            local BtnFrame = Instance.new("TextButton")
-            BtnFrame.Size = UDim2.new(1, 0, 0, 40)
-            BtnFrame.BackgroundColor3 = Colors.Element
-            BtnFrame.Text = ""
-            BtnFrame.AutoButtonColor = false
-            BtnFrame.Parent = Page
-            
-            local BtnCorner = Instance.new("UICorner"); BtnCorner.CornerRadius = UDim.new(0, 6); BtnCorner.Parent = BtnFrame
-            
-            local BtnText = Instance.new("TextLabel")
-            BtnText.Text = Text
-            BtnText.Size = UDim2.new(1, -20, 1, 0)
-            BtnText.Position = UDim2.new(0, 10, 0, 0)
-            BtnText.BackgroundTransparency = 1
-            BtnText.Font = Enum.Font.GothamSemibold
-            BtnText.TextColor3 = Colors.Text
-            BtnText.TextSize = 14
-            BtnText.TextXAlignment = Enum.TextXAlignment.Left
-            BtnText.Parent = BtnFrame
-            
-            -- Icon (стрелочка или что-то подобное)
-            local Icon = Instance.new("ImageLabel")
-            Icon.Size = UDim2.new(0, 20, 0, 20)
-            Icon.Position = UDim2.new(1, -30, 0.5, -10)
-            Icon.BackgroundTransparency = 1
-            Icon.Image = "rbxassetid://6031094678" -- Иконка "Click"
-            Icon.ImageColor3 = Colors.TextDark
-            Icon.Parent = BtnFrame
+        if FirstTab then
+            FirstTab = false
+            Activate()
+        end
 
-            BtnFrame.MouseButton1Click:Connect(function()
-                TweenService:Create(BtnFrame, TweenInfo.new(0.1), {BackgroundColor3 = Colors.Hover}):Play()
+        -- [[ ЭЛЕМЕНТЫ UI ]] --
+
+        -- BUTTON
+        function TabFuncs:Button(Text, Callback)
+            local Btn = Instance.new("TextButton")
+            Btn.Size = UDim2.new(1, -5, 0, 32) -- Компактнее высота
+            Btn.BackgroundColor3 = Colors.Section
+            Btn.Text = ""
+            Btn.AutoButtonColor = false
+            Btn.Parent = Page
+            
+            local UIC = Instance.new("UICorner"); UIC.CornerRadius = UDim.new(0, 4); UIC.Parent = Btn
+            AddStroke(Btn, 1, Colors.Stroke)
+
+            local Title = Instance.new("TextLabel")
+            Title.Text = Text
+            Title.Size = UDim2.new(1, 0, 1, 0)
+            Title.BackgroundTransparency = 1
+            Title.Font = Enum.Font.GothamBold
+            Title.TextSize = 12
+            Title.TextColor3 = Colors.Text
+            Title.Parent = Btn
+
+            Btn.MouseButton1Click:Connect(function()
                 Callback()
+                TweenService:Create(Btn, TweenInfo.new(0.1), {BackgroundColor3 = Color3.fromRGB(45,45,45)}):Play()
                 wait(0.1)
-                TweenService:Create(BtnFrame, TweenInfo.new(0.2), {BackgroundColor3 = Colors.Element}):Play()
+                TweenService:Create(Btn, TweenInfo.new(0.1), {BackgroundColor3 = Colors.Section}):Play()
             end)
         end
 
-        -- 2. TOGGLE (Checkbox)
-        function Tab:Toggle(Text, Default, Callback)
-            local Callback = Callback or function() end
+        -- TOGGLE (Переключатель)
+        function TabFuncs:Toggle(Text, Default, Callback)
             local Toggled = Default or false
             
-            local ToggleFrame = Instance.new("TextButton")
-            ToggleFrame.Size = UDim2.new(1, 0, 0, 40)
-            ToggleFrame.BackgroundColor3 = Colors.Element
-            ToggleFrame.Text = ""
-            ToggleFrame.AutoButtonColor = false
-            ToggleFrame.Parent = Page
+            local Tgl = Instance.new("TextButton")
+            Tgl.Size = UDim2.new(1, -5, 0, 32)
+            Tgl.BackgroundColor3 = Colors.Section
+            Tgl.Text = ""
+            Tgl.AutoButtonColor = false
+            Tgl.Parent = Page
             
-            local TglCorner = Instance.new("UICorner"); TglCorner.CornerRadius = UDim.new(0, 6); TglCorner.Parent = ToggleFrame
-            
-            local TglText = Instance.new("TextLabel")
-            TglText.Text = Text
-            TglText.Size = UDim2.new(1, -50, 1, 0)
-            TglText.Position = UDim2.new(0, 10, 0, 0)
-            TglText.BackgroundTransparency = 1
-            TglText.Font = Enum.Font.GothamSemibold
-            TglText.TextColor3 = Colors.Text
-            TglText.TextSize = 14
-            TglText.TextXAlignment = Enum.TextXAlignment.Left
-            TglText.Parent = ToggleFrame
+            local UIC = Instance.new("UICorner"); UIC.CornerRadius = UDim.new(0, 4); UIC.Parent = Tgl
+            local Stroke = AddStroke(Tgl, 1, Colors.Stroke)
 
-            -- Квадратик чекбокса
-            local CheckBox = Instance.new("Frame")
-            CheckBox.Size = UDim2.new(0, 22, 0, 22)
-            CheckBox.Position = UDim2.new(1, -35, 0.5, -11)
-            CheckBox.BackgroundColor3 = Toggled and Colors.Accent or Color3.fromRGB(60,60,60)
-            CheckBox.Parent = ToggleFrame
-            
-            local CheckCorner = Instance.new("UICorner"); CheckCorner.CornerRadius = UDim.new(0, 4); CheckCorner.Parent = CheckBox
+            local Title = Instance.new("TextLabel")
+            Title.Text = Text
+            Title.Size = UDim2.new(1, -40, 1, 0)
+            Title.Position = UDim2.new(0, 10, 0, 0)
+            Title.BackgroundTransparency = 1
+            Title.Font = Enum.Font.GothamBold
+            Title.TextSize = 12
+            Title.TextColor3 = Colors.Text
+            Title.TextXAlignment = Enum.TextXAlignment.Left
+            Title.Parent = Tgl
 
-            -- Логика
-            ToggleFrame.MouseButton1Click:Connect(function()
+            -- Квадратик
+            local Box = Instance.new("Frame")
+            Box.Size = UDim2.new(0, 18, 0, 18)
+            Box.Position = UDim2.new(1, -28, 0.5, -9)
+            Box.BackgroundColor3 = Toggled and Colors.Accent or Color3.fromRGB(20,20,20)
+            Box.Parent = Tgl
+            local BoxCorn = Instance.new("UICorner"); BoxCorn.CornerRadius = UDim.new(0, 3); BoxCorn.Parent = Box
+            AddStroke(Box, 1, Colors.Stroke) -- Обводка квадратика
+
+            if Toggled then
+                Title.TextColor3 = Colors.Accent -- Если включено сразу, красим текст
+                Stroke.Color = Colors.Accent
+            end
+
+            Tgl.MouseButton1Click:Connect(function()
                 Toggled = not Toggled
                 Callback(Toggled)
                 
                 if Toggled then
-                    TweenService:Create(CheckBox, TweenInfo.new(0.2), {BackgroundColor3 = Colors.Accent}):Play()
+                    TweenService:Create(Box, TweenInfo.new(0.2), {BackgroundColor3 = Colors.Accent}):Play()
+                    TweenService:Create(Title, TweenInfo.new(0.2), {TextColor3 = Colors.Accent}):Play() -- Текст становится желтым
+                    TweenService:Create(Stroke, TweenInfo.new(0.2), {Color = Colors.Accent}):Play() -- Рамка желтеет
                 else
-                    TweenService:Create(CheckBox, TweenInfo.new(0.2), {BackgroundColor3 = Color3.fromRGB(60,60,60)}):Play()
+                    TweenService:Create(Box, TweenInfo.new(0.2), {BackgroundColor3 = Color3.fromRGB(20,20,20)}):Play()
+                    TweenService:Create(Title, TweenInfo.new(0.2), {TextColor3 = Colors.Text}):Play()
+                    TweenService:Create(Stroke, TweenInfo.new(0.2), {Color = Colors.Stroke}):Play()
                 end
             end)
         end
 
-        -- 3. SLIDER
-        function Tab:Slider(Text, Min, Max, Default, Callback)
-            local Callback = Callback or function() end
+        -- SLIDER
+        function TabFuncs:Slider(Text, Min, Max, Default, Callback)
             local Value = Default or Min
             local Dragging = false
             
-            local SliderFrame = Instance.new("Frame")
-            SliderFrame.Size = UDim2.new(1, 0, 0, 50) -- Чуть выше
-            SliderFrame.BackgroundColor3 = Colors.Element
-            SliderFrame.Parent = Page
+            local SldFrame = Instance.new("Frame")
+            SldFrame.Size = UDim2.new(1, -5, 0, 42) -- Чуть выше
+            SldFrame.BackgroundColor3 = Colors.Section
+            SldFrame.Parent = Page
             
-            local SldCorner = Instance.new("UICorner"); SldCorner.CornerRadius = UDim.new(0, 6); SldCorner.Parent = SliderFrame
-            
-            local SldText = Instance.new("TextLabel")
-            SldText.Text = Text
-            SldText.Size = UDim2.new(1, -20, 0, 20)
-            SldText.Position = UDim2.new(0, 10, 0, 5)
-            SldText.BackgroundTransparency = 1
-            SldText.Font = Enum.Font.GothamSemibold
-            SldText.TextColor3 = Colors.Text
-            SldText.TextSize = 14
-            SldText.TextXAlignment = Enum.TextXAlignment.Left
-            SldText.Parent = SliderFrame
+            local UIC = Instance.new("UICorner"); UIC.CornerRadius = UDim.new(0, 4); UIC.Parent = SldFrame
+            AddStroke(SldFrame, 1, Colors.Stroke)
+
+            local Title = Instance.new("TextLabel")
+            Title.Text = Text
+            Title.Size = UDim2.new(1, -10, 0, 20)
+            Title.Position = UDim2.new(0, 10, 0, 2)
+            Title.BackgroundTransparency = 1
+            Title.Font = Enum.Font.GothamBold
+            Title.TextColor3 = Colors.Text
+            Title.TextSize = 12
+            Title.TextXAlignment = Enum.TextXAlignment.Left
+            Title.Parent = SldFrame
             
             local ValueLabel = Instance.new("TextLabel")
             ValueLabel.Text = tostring(Value)
-            ValueLabel.Size = UDim2.new(0, 50, 0, 20)
-            ValueLabel.Position = UDim2.new(1, -60, 0, 5)
+            ValueLabel.Size = UDim2.new(0, 40, 0, 20)
+            ValueLabel.Position = UDim2.new(1, -45, 0, 2)
             ValueLabel.BackgroundTransparency = 1
-            ValueLabel.Font = Enum.Font.Gotham
-            ValueLabel.TextColor3 = Colors.TextDark
+            ValueLabel.Font = Enum.Font.GothamBold
+            ValueLabel.TextColor3 = Colors.Accent -- Значение желтое
             ValueLabel.TextSize = 12
             ValueLabel.TextXAlignment = Enum.TextXAlignment.Right
-            ValueLabel.Parent = SliderFrame
+            ValueLabel.Parent = SldFrame
 
-            -- Полоска слайдера
-            local SliderBar = Instance.new("Frame")
-            SliderBar.Size = UDim2.new(1, -20, 0, 6)
-            SliderBar.Position = UDim2.new(0, 10, 0, 35)
-            SliderBar.BackgroundColor3 = Color3.fromRGB(60,60,60)
-            SliderBar.Parent = SliderFrame
-            local BarCorner = Instance.new("UICorner"); BarCorner.CornerRadius = UDim.new(1,0); BarCorner.Parent = SliderBar
+            -- Полоска
+            local BarBack = Instance.new("Frame")
+            BarBack.Size = UDim2.new(1, -20, 0, 4)
+            BarBack.Position = UDim2.new(0, 10, 0, 28)
+            BarBack.BackgroundColor3 = Color3.fromRGB(15, 15, 15)
+            BarBack.BorderSizePixel = 0
+            BarBack.Parent = SldFrame
+            local BC = Instance.new("UICorner"); BC.CornerRadius = UDim.new(1,0); BC.Parent = BarBack
             
             local Fill = Instance.new("Frame")
             Fill.Size = UDim2.new((Value - Min) / (Max - Min), 0, 1, 0)
-            Fill.BackgroundColor3 = Colors.Accent
-            Fill.Parent = SliderBar
-            local FillCorner = Instance.new("UICorner"); FillCorner.CornerRadius = UDim.new(1,0); FillCorner.Parent = Fill
+            Fill.BackgroundColor3 = Colors.Accent -- Желтая заливка
+            Fill.BorderSizePixel = 0
+            Fill.Parent = BarBack
+            local FC = Instance.new("UICorner"); FC.CornerRadius = UDim.new(1,0); FC.Parent = Fill
 
-            -- Логика движения
             local Trigger = Instance.new("TextButton")
             Trigger.Size = UDim2.new(1, 0, 1, 0)
             Trigger.BackgroundTransparency = 1
             Trigger.Text = ""
-            Trigger.Parent = SliderBar
+            Trigger.Parent = SldFrame
             
-            local function UpdateSlide(input)
-                local pos = UDim2.new(math.clamp((input.Position.X - SliderBar.AbsolutePosition.X) / SliderBar.AbsoluteSize.X, 0, 1), 0, 1, 0)
-                Fill:TweenSize(pos, "Out", "Sine", 0.1, true)
-                local val = math.floor(((pos.X.Scale * (Max - Min)) + Min) * 10) / 10
+            local function Update(input)
+                local pos = math.clamp((input.Position.X - BarBack.AbsolutePosition.X) / BarBack.AbsoluteSize.X, 0, 1)
+                local val = math.floor(((pos * (Max - Min)) + Min) * 10) / 10
+                
+                Fill:TweenSize(UDim2.new(pos, 0, 1, 0), "Out", "Sine", 0.05, true)
                 ValueLabel.Text = tostring(val)
                 Callback(val)
             end
 
             Trigger.InputBegan:Connect(function(input)
-                if input.UserInputType == Enum.UserInputType.MouseButton1 or input.UserInputType == Enum.UserInputType.Touch then
+                if input.UserInputType == Enum.UserInputType.MouseButton1 then
                     Dragging = true
-                    UpdateSlide(input)
+                    Update(input)
                 end
             end)
             
             UserInputService.InputEnded:Connect(function(input)
-                if input.UserInputType == Enum.UserInputType.MouseButton1 or input.UserInputType == Enum.UserInputType.Touch then
-                    Dragging = false
-                end
+                if input.UserInputType == Enum.UserInputType.MouseButton1 then Dragging = false end
             end)
             
             UserInputService.InputChanged:Connect(function(input)
-                if Dragging and (input.UserInputType == Enum.UserInputType.MouseMovement or input.UserInputType == Enum.UserInputType.Touch) then
-                    UpdateSlide(input)
+                if Dragging and input.UserInputType == Enum.UserInputType.MouseMovement then
+                    Update(input)
                 end
             end)
         end
 
-        return Tab
+        return TabFuncs
     end
     
     return UI
